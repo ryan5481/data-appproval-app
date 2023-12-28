@@ -1,0 +1,9 @@
+# Ignore node_modules in the root directory
+node_modules/
+
+# Ignore .env and .next in the server directory
+/server/.env
+/server/.next/
+
+# Ignore node_modules in the client directory
+/client/node_modules/
