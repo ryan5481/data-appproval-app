@@ -3,7 +3,9 @@ node_modules/
 
 # Ignore .env and .next in the server directory
 /server/.env
-/server/.next/
+/server/node_modules/
 
 # Ignore node_modules in the client directory
 /client/node_modules/
+/client/.env.example/
+/client/.next/

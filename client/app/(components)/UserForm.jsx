@@ -1,81 +1,59 @@
+"use client"
 import React, { useState } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image'
-import axios from 'axios'
-import { useDispatch } from 'react-redux'
-import { assignUserRole, setLoginDetails } from '../../redux/reducers/userSlice'
 import toast from 'react-simple-toasts';
 import 'react-simple-toasts/dist/theme/light.css';
-const baseUrl = process.env.BASE_URL
 
 
-export default function UserLogin() {
+export default function SignupUserForm() {
   const router = useRouter();
   //PASSWORD VISIBLITY
   const [showPassword, setShowPassword] = useState(false);
-  const [userType, setUserType] = useState('admin');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  // const [userType, setUserType] = useState('user');
+  const [formData, setFormData] = useState({userRole: "user"});
+  const [errorMessage, setErrorMessage] = useState('');
+
   const togglePasswordVisibility = () => {
     setShowPassword((prevShowPassword) => !prevShowPassword);
   };
-  // DISPATCH DATA FROM LOGIN
-  const dispatch = useDispatch()
 
+  //HANDLE INPUTS
+  const handleChange = (e) => {
+    const {name, value} = e.target
+    setFormData((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }))
+  }
   //SUBMIT FORM
   const handleSubmit = async (event) => {
     event.preventDefault();
-
+    setErrorMessage("")
     try {
       let endpoint;
-      if (userType === 'admin') {
-        endpoint = `http://localhost:8000/admin-login`;
-      } else if (userType === 'superAdmin') {
-        endpoint = `http://localhost:8000/super-admin-login`;
+      const res = await fetch("/api/Users", {
+        method: "POST",
+        body: JSON.stringify({ formData }),
+        "contect-type": "application/json"
+      })
+      if (!res.ok) {
+        const response = await res.json()
+        setErrorMessage(response).message
+      } else {
+        // router.refresh()
+        // router.push("/")
       }
 
-      const response = await axios.post(endpoint, {
-        email: email,
-        password: password,
-      });
-      if (response.status === 200) {
-        dispatch(assignUserRole(response.data.userRole));
-        dispatch(
-          setLoginDetails({
-            id: response.data.id,
-            token: response.data.token,
-            email: response.data.email,
-            fullName: response.data?.fullName,
-            userRole: response.data?.userRole,
-            department: response.data?.department,
-            isLoggedIn: true,
-          })
-        );
-        toast(`Logged into ${response.data?.userRole == "superAdmin" ? ("super admin") : ("admin")} account.`,{ position: 'top-center', theme: 'light' });
-        if(response.data.userRole == "superAdmin"){
-          setTimeout(() => {router.push('/super-admin-dashboard')}, 1000)
-        }if(response.data.userRole == "admin"){
-          setTimeout(() => {router.push('/admin-dashboard')}, 1000)
-        }
-      }
     } catch (error) {
-      console.error('Error:', error);
-      if (error.response && error.response.status == 401) {
-        toast(`Invalid email or password.` ,{ position: 'top-center', theme: 'light' });
-      }
-      else if (error.response && error.response.status == 404) {
-        toast(`User doesn't exist.` ,{ position: 'top-center', theme: 'light' });
-      }
-      else {
-        toast(`Error logging in. Please contact administrator` ,{ position: 'top-center', theme: 'light' });
-      }
+      toast(errorMessage, { position: 'top-center', theme: 'light' });
     }
   };
   return (
-    <main className="flex min-h-screen justify-center items-center p-24 w-full bg-blue-900">
+    <main className="flex min-h-screen justify-center items-center p-24 w-full bg-blue-300">
       {/* LOGO */}
       <div className='flex flex-col w-80 items-center justify-center bg-white p-5 rounded-lg shadow-lg'>
-        <div className='relative flex mb-2 h-14 w-80'>
+        <div className='relative flex items-center justify-center mb-2 h-14 w-80'>
           <Image
             src={`/uploads/logo/1.jpeg`}
             height={1000}
@@ -85,19 +63,40 @@ export default function UserLogin() {
           />
         </div>
         {/* TITLE */}
-        <div className='font-bold text-blue-500 text-[20px] p-1' >Admin Login</div>
+        <div className='font-bold text-blue-500 text-[20px] items-center justify-center w-full p-1' >User Regstration Form</div>
         <form
           onSubmit={handleSubmit}
           className="w-full mx-auto"
         >
           {/* USER TYPE */}
-          <label htmlFor="userType" className="block mb-2 text-sm font-medium text-gray-900">Admin type</label>
+          <label htmlFor="userType" className="block mb-2 text-sm font-medium text-gray-900">User type</label>
           <select
-            onChange={(e) => setUserType(e.target.value)}
-            id="userType" className="bg-gray-50 border border-gray-300 text-gray-900 mb-3 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" >
-            <option value="admin" >Admin</option>
-            <option value="superAdmin">Super Admin</option>
+            onChange={handleChange}
+            id="userRole"
+            name="userRole"
+            value={formData.userRole}
+             className="bg-gray-50 border border-gray-300 text-gray-900 mb-3 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" >
+            <option value="user" >USER</option>
+            <option value="initiator">INITIATOR</option>
+            <option value="admin" style={{ color: 'red', fontWeight: 'bold' }}>ADMIN</option>
           </select>
+          {/* NAME */}
+          <label htmlFor="email-address-icon" className="block mb-2 text-sm font-medium text-gray-900">Full Name</label>
+          <div className="relative  mb-3">
+            <div className="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
+              <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 0a10 10 0 1 0 10 10A10.011 10.011 0 0 0 10 0Zm0 5a3 3 0 1 1 0 6 3 3 0 0 1 0-6Zm0 13a8.949 8.949 0 0 1-4.951-1.488A3.987 3.987 0 0 1 9 13h2a3.987 3.987 0 0 1 3.951 3.512A8.949 8.949 0 0 1 10 18Z" />
+              </svg>
+            </div>
+            <input
+              onChange={handleChange}
+              type="text"
+              id="fullName"
+              name='fullName'
+              required={true}
+              value={formData.fullName}
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5 -5  " placeholder="Full Name" />
+          </div>
           {/* EMAIL */}
           <label htmlFor="email-address-icon" className="block mb-2 text-sm font-medium text-gray-900">Email</label>
           <div className="relative  mb-3">
@@ -108,21 +107,27 @@ export default function UserLogin() {
               </svg>
             </div>
             <input
-              onChange={(e) => setEmail(e.target.value)}
-              type="text" id="email-address-icon" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5 -5  " placeholder="xyz@radiantit.com" />
+              onChange={handleChange}
+              type="text"
+              id="email"
+              name='email'
+              required={true}
+              value={formData.email}
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5 -5  " placeholder="xyz@radiantit.com" />
           </div>
           <div className="mb-5">
             {/* PASSWORD */}
             <label htmlFor="password" className="block mb-2 text-sm font-medium text-gray-900">Password</label>
             <div className="relative">
               <input
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={handleChange}
                 type={showPassword ? 'text' : 'password'}
                 id="password"
-                // value={password}
+                name='password'
+                required={true}
+                value={formData.name}
                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-10"
                 placeholder="••••••••••••"
-                required
               />
               <div
                 className="absolute inset-y-0 right-0 pr-2.5 flex items-center cursor-pointer"
@@ -147,7 +152,7 @@ export default function UserLogin() {
             <button
               onClick={handleSubmit}
               type="submit"
-              className="text-white bg-blue-800 hover:bg-blue-900 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center"
+              className="text-white bg-blue-500 hover:bg-blue-600 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center"
             >Submit</button>
           </div>
         </form>
